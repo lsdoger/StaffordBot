@@ -16,7 +16,7 @@ client.once('ready', () => {
 
 client.on('messageCreate', async (message) => {
   if (message.content === '!list') {
-    const allowedRoles = ["1352225611996725258", "1359148705852297296"];
+    const allowedRoles = ["857734271741067264"];
     if (!message.member.roles.cache.some(role => allowedRoles.includes(role.id))) {
       message.reply('You do not have permission to use this command.');
       return;
@@ -62,7 +62,7 @@ client.on('messageCreate', async (message) => {
       const list = [...members.values()].map((m, i) => {
         usedMembers.add(m.id);
         const name = m.nickname || m.user.username;
-        return `${i + 1}. <@${m.id}> | ${role.name} | ${name}`;
+        return `${i + 1}. <@${m.id}> | ${name}`;
       });
 
       const embed = new EmbedBuilder()
