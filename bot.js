@@ -23,58 +23,55 @@ client.on('messageCreate', async (message) => {
     }
 
     const guild = message.guild;
-    await guild.members.fetch(); // важливо!
-
-    const getRoleMembers = (roleId, label, emoji) => {
-      const role = guild.roles.cache.get(roleId);
-      if (!role) return `${emoji} **${label}** — роль не найдена\n`;
-      const members = role.members.map(m => {
-        const member = guild.members.cache.get(m.id);
-        return `- <@${m.id}> | ${member.nickname || m.user.tag}`;
-      });
-      if (members.length === 0) return `${emoji} **${label}** — Отсутствует\n`;
-      return `${emoji} **${label}**:\n${members.join('\n')}\n`;
-    };
-
-    const leaderList = getRoleMembers(process.env.ID_Leader, "Leader", "");
-    const depLeaderList = getRoleMembers(process.env.ID_DepLeader, "Deputy Leader", "");
-    const highStaffList = getRoleMembers(process.env.ID_HighStaff, "High Staff", "");
-    const recruiterList = getRoleMembers(process.env.ID_Recruiter, "Recruiter", "");
-
-    const finalMessage = `📋 **Состав 𝐒𝐓𝐀𝐅𝐅𝐎𝐑𝐃 & 𝐕𝐄𝐋𝐀𝐙𝐐𝐔𝐄𝐙:**\n\n${leaderList}\n${depLeaderList}\n${highStaffList}\n${recruiterList}`;
+    await guild.members.fetch();
 
     const targetChannel = await client.channels.fetch(process.env.ID_Channel);
 
-    // Delete previous bot messages
+    // 🔢 ID ролей, які треба виводити
+    const roleIds = [
+      process.env.ID_Leader,
+      process.env.ID_DepLeader,
+      process.env.ID_HighStaff,
+      process.env.ID_Recruiter,
+      process.env.ID_Main,
+    ];
+
+    // 📊 Сортуємо ролі за Discord-позицією (від вищої до нижчої)
+    const sortedRoles = roleIds
+      .map(id => guild.roles.cache.get(id))
+      .filter(Boolean)
+      .sort((a, b) => b.position - a.position);
+
+    const usedMembers = new Set();
+
+    // 🧹 Чистимо попередні повідомлення бота
     try {
       const messages = await targetChannel.messages.fetch({ limit: 100 });
       const botMessages = messages.filter(m => m.author.id === client.user.id);
-
       await targetChannel.bulkDelete(botMessages, true);
-      console.log(`Deleted ${botMessages.size} previous messages.`);
+      console.log(`🗑️ Deleted ${botMessages.size} previous messages.`);
     } catch (error) {
-      console.error('Error deleting messages:', error);
+      console.error('❌ Error deleting messages:', error);
     }
 
-    const leaderEmbed = new EmbedBuilder()
-      .setColor(0xff0000)
-      .setDescription(leaderList);
-    targetChannel.send({ embeds: [leaderEmbed] });
+    // 🔁 Генеруємо Embed для кожної ролі
+    for (const role of sortedRoles) {
+      const members = role.members.filter(m => !usedMembers.has(m.id));
+      if (members.size === 0) continue;
 
-    const depLeaderEmbed = new EmbedBuilder()
-      .setColor(0x6d2ba6)
-      .setDescription(depLeaderList);
-    targetChannel.send({ embeds: [depLeaderEmbed] });
+      const list = [...members.values()].map((m, i) => {
+        usedMembers.add(m.id);
+        const name = m.nickname || m.user.username;
+        return `${i + 1}. <@${m.id}> | ${role.name} | ${name}`;
+      });
 
-    const highStaffEmbed = new EmbedBuilder()
-      .setColor(0x0080ff)
-      .setDescription(highStaffList);
-    targetChannel.send({ embeds: [highStaffEmbed] });
+      const embed = new EmbedBuilder()
+        .setTitle(role.name)
+        .setColor(role.color || 0x2f3136)
+        .setDescription(list.join('\n'));
 
-    const recruiterEmbed = new EmbedBuilder()
-      .setColor(0x0046ff)
-      .setDescription(recruiterList);
-    targetChannel.send({ embeds: [recruiterEmbed] });
+      await targetChannel.send({ embeds: [embed] });
+    }
   }
 });
 
