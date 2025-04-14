@@ -27,7 +27,7 @@ client.on('messageCreate', async (message) => {
 
     const targetChannel = await client.channels.fetch(process.env.ID_Channel);
 
-    // 🔢 ID ролей, які треба виводити
+    //  ID з env
     const roleIds = [
       process.env.ID_Leader,
       process.env.ID_DepLeader,
@@ -44,7 +44,7 @@ client.on('messageCreate', async (message) => {
 
     const usedMembers = new Set();
 
-    // 🧹 Чистимо попередні повідомлення бота
+    //  Чистимо повідомлення 
     try {
       const messages = await targetChannel.messages.fetch({ limit: 100 });
       const botMessages = messages.filter(m => m.author.id === client.user.id);
@@ -54,7 +54,7 @@ client.on('messageCreate', async (message) => {
       console.error('❌ Error deleting messages:', error);
     }
 
-    // 🔁 Генеруємо Embed для кожної ролі
+    // Генеруємо Embed
     for (const role of sortedRoles) {
       const members = role.members.filter(m => !usedMembers.has(m.id));
       if (members.size === 0) continue;
